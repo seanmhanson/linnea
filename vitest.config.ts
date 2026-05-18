@@ -1,11 +1,10 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     projects: [
       {
+        resolve: { tsconfigPaths: true },
         test: {
           name: "unit",
           include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
@@ -13,6 +12,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { tsconfigPaths: true },
         test: {
           name: "integration",
           include: ["tests/integration/**/*.test.ts", "tests/integration/**/*.test.tsx"],
