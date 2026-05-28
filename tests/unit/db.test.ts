@@ -53,4 +53,12 @@ describe("OBSERVATIONS_VALIDATOR", () => {
   it("requires images array to have at least one item", () => {
     expect($jsonSchema.properties.images.minItems).toBe(1);
   });
+
+  it("sets additionalProperties to false to enforce the schema strictly", () => {
+    expect($jsonSchema.additionalProperties).toBe(false);
+  });
+
+  it("allows the _id field so MongoDB-inserted _id is not rejected", () => {
+    expect($jsonSchema.properties).toHaveProperty("_id");
+  });
 });

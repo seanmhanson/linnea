@@ -37,8 +37,9 @@ export const OBSERVATIONS_VALIDATOR = {
       "locationName",
       "createdAt",
     ],
-    additionalProperties: true,
+    additionalProperties: false,
     properties: {
+      _id: { bsonType: "objectId" },
       commonName: { bsonType: "string" },
       scientificName: { bsonType: "string" },
       taxonId: { bsonType: ["double", "int", "long"] },
@@ -72,7 +73,13 @@ async function setupCollections(): Promise<void> {
 }
 
 export function ensureCollections(): Promise<void> {
-  return (schemaSetupPromise ??= setupCollections());
+  if (!schemaSetupPromise) {
+    schemaSetupPromise = setupCollections().catch((err) => {
+      schemaSetupPromise = null;
+      throw err;
+    });
+  }
+  return schemaSetupPromise;
 }
 
 export async function getObservationsCollection(): Promise<Collection<Observation>> {
