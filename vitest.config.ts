@@ -1,13 +1,17 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     projects: [
       {
-        plugins: [tsconfigPaths()],
+        resolve: {
+          tsconfigPaths: true,
+        },
         test: {
           name: "unit",
           include: ["src/**/__tests__/*.spec.ts", "src/**/__tests__/*.spec.tsx"],
@@ -15,7 +19,9 @@ export default defineConfig({
         },
       },
       {
-        plugins: [tsconfigPaths()],
+        resolve: {
+          tsconfigPaths: true,
+        },
         test: {
           name: "integration",
           include: ["src/**/__tests__/*.int.ts", "src/**/__tests__/*.int.tsx"],
