@@ -93,7 +93,13 @@ export class DatabaseProvider {
     for (const { name, $jsonSchema } of COLLECTIONS) {
       const exists = await database.listCollections({ name }).hasNext();
       if (exists) {
-        console.info(`   - Collection '${name}' already exists`);
+        await database.command({
+          collMod: name,
+          validator: { $jsonSchema },
+          validationAction: "error",
+          validationLevel: "strict",
+        });
+        console.info(`   - Collection '${name}' already exists; validator updated`);
         continue;
       }
 
