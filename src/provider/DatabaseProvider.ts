@@ -10,7 +10,7 @@ export const VALID_COLLECTION_NAMES: readonly CollectionName[] = Object.freeze(
   COLLECTIONS.map((c) => c.name)
 );
 
-class DatabaseProvider {
+export class DatabaseProvider {
   private client: MongoClient | null = null;
   private db: Db | null = null;
 
