@@ -36,7 +36,7 @@ class DatabaseProvider {
       this.client = new MongoClient(this.uri);
       await this.client.connect();
       this.db = this.client.db(this.dbName);
-      console.info("Connected to MongoDB on URI:", this.uri);
+      console.info("Connected to MongoDB");
       return this.db;
     } catch (error) {
       console.error("Failed to connect to MongoDB:", error);
@@ -121,3 +121,7 @@ class DatabaseProvider {
 }
 
 export default new DatabaseProvider();
+
+export type IDatabaseProvider = {
+  [K in keyof InstanceType<typeof DatabaseProvider>]: InstanceType<typeof DatabaseProvider>[K];
+};

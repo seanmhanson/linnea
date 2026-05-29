@@ -8,16 +8,16 @@ import type {
   Sort,
 } from "mongodb";
 import { ObjectId } from "mongodb";
-import DatabaseProvider, { CollectionName } from "@/src/provider/DatabaseProvider";
+import { CollectionName } from "@/src/provider/DatabaseProvider";
+import type { IDatabaseProvider } from "@/src/provider/DatabaseProvider";
 
 type FilterId<T> = Filter<T>["_id"];
-type DbProvider = typeof DatabaseProvider;
 
 abstract class BaseDao<T extends Document & { _id?: ObjectId }> {
   public abstract collectionName: CollectionName;
-  protected dbProvider: DbProvider;
+  protected dbProvider: IDatabaseProvider;
 
-  constructor(dbProvider: DbProvider) {
+  constructor(dbProvider: IDatabaseProvider) {
     this.dbProvider = dbProvider;
   }
 

@@ -1,16 +1,14 @@
-import type Observation from "@/src/mapper/observation";
-import type { ObservationDocument } from "@/src/mapper/observation";
-import DatabaseProvider, { CollectionName } from "@/src/provider/DatabaseProvider";
+import type { Observation, ObservationDocument } from "@/src/mapper/observation";
+import { CollectionName } from "@/src/provider/DatabaseProvider";
+import type { IDatabaseProvider } from "@/src/provider/DatabaseProvider";
 import BaseDao from "./BaseDao";
-
-type DbProvider = typeof DatabaseProvider;
 
 export type CreateObservationInput = Omit<Observation, "createdAt">;
 
 class ObservationDao extends BaseDao<Observation> {
   public collectionName: CollectionName = "observations";
 
-  constructor(dbProvider: DbProvider) {
+  constructor(dbProvider: IDatabaseProvider) {
     super(dbProvider);
   }
 

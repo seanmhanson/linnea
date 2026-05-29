@@ -19,5 +19,4 @@ type Observation = {
 
 type ObservationDocument = WithId<Observation>;
 
-export default Observation;
-export type { ConfidenceLevel, ObservationDocument };
+export type { ConfidenceLevel, Observation, ObservationDocument };
