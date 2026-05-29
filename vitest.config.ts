@@ -7,16 +7,18 @@ export default defineConfig({
   test: {
     projects: [
       {
+        plugins: [tsconfigPaths()],
         test: {
           name: "unit",
-          include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
+          include: ["src/**/__tests__/*.spec.ts", "src/**/__tests__/*.spec.tsx"],
           environment: "node",
         },
       },
       {
+        plugins: [tsconfigPaths()],
         test: {
           name: "integration",
-          include: ["tests/integration/**/*.test.ts", "tests/integration/**/*.test.tsx"],
+          include: ["src/**/__tests__/*.int.ts", "src/**/__tests__/*.int.tsx"],
           environment: "node",
         },
       },
