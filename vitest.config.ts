@@ -3,19 +3,28 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    tsconfigPaths: true,
+  },
   test: {
     projects: [
       {
+        resolve: {
+          tsconfigPaths: true,
+        },
         test: {
           name: "unit",
-          include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
+          include: ["src/**/__tests__/*.spec.ts", "src/**/__tests__/*.spec.tsx"],
           environment: "node",
         },
       },
       {
+        resolve: {
+          tsconfigPaths: true,
+        },
         test: {
           name: "integration",
-          include: ["tests/integration/**/*.test.ts", "tests/integration/**/*.test.tsx"],
+          include: ["src/**/__tests__/*.int.ts", "src/**/__tests__/*.int.tsx"],
           environment: "node",
         },
       },
