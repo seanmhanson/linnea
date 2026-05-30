@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+// subject
 import { Config, defaults, getConfig, resetConfig } from "@/src/util/Config";
 
 type configProperty = {
@@ -12,13 +14,13 @@ const configProperties: configProperty[] = [
   { configKey: "dbName", envKey: "DB_NAME", defaultValue: defaults.DB_NAME },
 ];
 
-describe("Config", () => {
+describe("src/util/Config", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     resetConfig();
   });
 
-  describe("#getInstance", () => {
+  describe("#getConfig", () => {
     it("returns a Config instance", () => {
       expect(getConfig()).toBeInstanceOf(Config);
     });

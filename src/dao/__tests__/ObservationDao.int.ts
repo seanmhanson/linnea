@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { ObjectId } from "mongodb";
+
 import { DatabaseProvider } from "@/src/provider/DatabaseProvider";
-import ObservationDao, { type CreateObservationInput } from "@/src/dao/ObservationDao";
+import type { CreateObservationInput } from "@/src/dao/ObservationDao";
+
+// subject
+import ObservationDao from "@/src/dao/ObservationDao";
 
 const baseInput: CreateObservationInput = {
   commonName: "Northern Cardinal",
@@ -10,32 +14,32 @@ const baseInput: CreateObservationInput = {
   locationName: "Backyard",
   observedAt: new Date("2025-06-01"),
   cultivated: false,
-  images: ["https://example.com/cardinal.jpg"],
+  image: "https://example.com/cardinal.jpg",
   confidence: "high",
 };
 
-let mongod: MongoMemoryServer;
-let provider: DatabaseProvider;
-let dao: ObservationDao;
+describe("src/dao/ObservationDao", () => {
+  let mongod: MongoMemoryServer;
+  let provider: DatabaseProvider;
+  let dao: ObservationDao;
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  provider = new DatabaseProvider(mongod.getUri(), "test-observations");
-  dao = new ObservationDao(provider);
-});
+  beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    provider = new DatabaseProvider(mongod.getUri(), "testObservationDao");
+    dao = new ObservationDao(provider);
+  });
 
-afterAll(async () => {
-  await provider.close();
-  await mongod.stop();
-});
+  afterAll(async () => {
+    await provider.close();
+    await mongod.stop();
+  });
 
-beforeEach(async () => {
-  const collection = await provider.getCollection("observations");
-  await collection.deleteMany({});
-});
+  beforeEach(async () => {
+    const collection = await provider.getCollection("observations");
+    await collection.deleteMany({});
+  });
 
-describe("ObservationDao", () => {
-  describe("createObservation", () => {
+  describe("#createObservation", () => {
     it("returns a document with an _id and createdAt", async () => {
       const result = await dao.createObservation(baseInput);
       expect(result._id).toBeInstanceOf(ObjectId);
@@ -49,7 +53,7 @@ describe("ObservationDao", () => {
     });
   });
 
-  describe("getAllObservations", () => {
+  describe("#getAllObservations", () => {
     it("returns an empty array when there are no observations", async () => {
       expect(await dao.getAllObservations()).toEqual([]);
     });
@@ -65,7 +69,7 @@ describe("ObservationDao", () => {
     });
   });
 
-  describe("getObservationById", () => {
+  describe("#getObservationById", () => {
     it("returns the matching observation", async () => {
       const { _id } = await dao.createObservation(baseInput);
       const result = await dao.getObservationById(_id.toHexString());
