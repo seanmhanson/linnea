@@ -1,0 +1,11 @@
+# documentation should be manually formatted
+*.md
+*.html
+
+node_modules/
+yarn.lock
+
+.github/
+.next/
+.vscode/
+

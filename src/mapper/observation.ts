@@ -9,7 +9,7 @@ type Observation = {
   locationName: string;
   observedAt: Date;
   cultivated: boolean;
-  images: string[];
+  image: string;
   confidence: ConfidenceLevel;
   identificationNotes?: string;
   description?: string;

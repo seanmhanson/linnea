@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
+
+// subject
 import { DatabaseProvider } from "@/src/provider/DatabaseProvider";
 
-describe("DatabaseProvider", () => {
+describe("/src/provider/DatabaseProvider", () => {
   let mongod: MongoMemoryServer;
   let provider: DatabaseProvider;
 
@@ -40,12 +42,12 @@ describe("DatabaseProvider", () => {
 
   describe("#connect", () => {
     it("connects to the database and returns a Db instance", async () => {
-      setupProvider("connect-test");
+      setupProvider("connectTest");
       await expect(provider.connect()).resolves.toBeDefined();
     });
 
     it("returns the same Db instance on repeated calls", async () => {
-      setupProvider("connect-cached");
+      setupProvider("connectCached");
 
       const first = await provider.connect();
       const second = await provider.connect();
@@ -55,18 +57,18 @@ describe("DatabaseProvider", () => {
 
   describe("#isConnected", () => {
     it("returns false before connecting", async () => {
-      setupProvider("connected-false");
+      setupProvider("connectedFalse");
       expect(await provider.isConnected()).toBe(false);
     });
 
     it("returns true after connecting", async () => {
-      setupProvider("connected-true");
+      setupProvider("connectedTrue");
       await provider.connect();
       expect(await provider.isConnected()).toBe(true);
     });
 
     it("returns false after closing", async () => {
-      setupProvider("connected-closed");
+      setupProvider("connectedClosed");
       await provider.connect();
       await provider.close();
       expect(await provider.isConnected()).toBe(false);
@@ -75,14 +77,14 @@ describe("DatabaseProvider", () => {
 
   describe("#close", () => {
     it("does not throw when called before connecting", async () => {
-      setupProvider("close-never-connected");
+      setupProvider("closeNeverConnected");
       await expect(provider.close()).resolves.toBeUndefined();
     });
   });
 
   describe("#getCollection", () => {
     it("returns a collection that supports insert and query", async () => {
-      setupProvider("getcollection-test");
+      setupProvider("getCollectionTest");
       const collection = await provider.getCollection("observations");
       await collection.insertOne({ name: "test" } as never);
       const result = await collection.findOne({ name: "test" } as never);
@@ -92,7 +94,7 @@ describe("DatabaseProvider", () => {
 
   describe("#createCollections", () => {
     it("creates the observations collection", async () => {
-      setupProvider("create-collections-test");
+      setupProvider("createCollectionsTest");
       await provider.createCollections();
       const db = await provider.connect();
       const names = await db.listCollections().toArray();
@@ -103,14 +105,14 @@ describe("DatabaseProvider", () => {
   describe("#resetDatabase", () => {
     it("throws in production environment", async () => {
       vi.stubEnv("NODE_ENV", "production");
-      setupProvider("reset-prod-test");
+      setupProvider("resetProdTest");
       await expect(provider.resetDatabase()).rejects.toThrow(
         "Database reset is not allowed in production environment"
       );
     });
 
     it("drops all collections in non-production", async () => {
-      setupProvider("reset-test");
+      setupProvider("resetTest");
       const collection = await provider.getCollection("observations");
       await collection.insertOne({ name: "to-be-dropped" } as never);
       await provider.resetDatabase();

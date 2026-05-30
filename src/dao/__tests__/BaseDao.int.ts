@@ -2,7 +2,10 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { ObjectId } from "mongodb";
 import type { Document, OptionalUnlessRequiredId, Sort, SortDirection } from "mongodb";
+
 import { DatabaseProvider } from "@/src/provider/DatabaseProvider";
+
+// subject
 import BaseDao from "@/src/dao/BaseDao";
 
 type TestDoc = Document & { _id?: ObjectId; value: string };
@@ -24,28 +27,28 @@ class TestDao extends BaseDao<TestDoc> {
   }
 }
 
-let mongod: MongoMemoryServer;
-let provider: DatabaseProvider;
-let dao: TestDao;
+describe("src/dao/BaseDao", () => {
+  let mongod: MongoMemoryServer;
+  let provider: DatabaseProvider;
+  let dao: TestDao;
 
-beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
-  provider = new DatabaseProvider(mongod.getUri(), "test-basedao");
-  dao = new TestDao(provider);
-});
+  beforeAll(async () => {
+    mongod = await MongoMemoryServer.create();
+    provider = new DatabaseProvider(mongod.getUri(), "testBaseDao");
+    dao = new TestDao(provider);
+  });
 
-afterAll(async () => {
-  await provider.close();
-  await mongod.stop();
-});
+  afterAll(async () => {
+    await provider.close();
+    await mongod.stop();
+  });
 
-beforeEach(async () => {
-  const collection = await provider.getCollection("observations");
-  await collection.deleteMany({});
-});
+  beforeEach(async () => {
+    const collection = await provider.getCollection("observations");
+    await collection.deleteMany({});
+  });
 
-describe("BaseDao", () => {
-  describe("getObjectId", () => {
+  describe("#getObjectId", () => {
     it("returns an ObjectId for a valid hex string", () => {
       const id = new ObjectId().toHexString();
       const result = BaseDao.getObjectId(id);
@@ -58,7 +61,7 @@ describe("BaseDao", () => {
     });
   });
 
-  describe("insertOne", () => {
+  describe("#insertOne", () => {
     it("inserts a document and returns an insertedId", async () => {
       const result = await dao.insert({ value: "alpha" });
       expect(result.insertedId).toBeInstanceOf(ObjectId);
@@ -72,7 +75,7 @@ describe("BaseDao", () => {
     });
   });
 
-  describe("findAll", () => {
+  describe("#findAll", () => {
     it("returns an empty array when the collection is empty", async () => {
       expect(await dao.all()).toEqual([]);
     });
@@ -85,7 +88,7 @@ describe("BaseDao", () => {
     });
   });
 
-  describe("findAllSorted", () => {
+  describe("#findAllSorted", () => {
     it("returns documents in the specified sort order", async () => {
       await dao.insert({ value: "b" });
       await dao.insert({ value: "a" });
@@ -95,7 +98,7 @@ describe("BaseDao", () => {
     });
   });
 
-  describe("findOne", () => {
+  describe("#findOne", () => {
     it("retrieves a document by its ObjectId", async () => {
       const { insertedId } = await dao.insert({ value: "findme" });
       const result = await dao.one(insertedId.toHexString());
