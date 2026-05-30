@@ -40,6 +40,8 @@ Linnea is a personal wildflower observation journal. An admin user uploads photo
 - Location is stored as `locationName` (a human-readable string), never as coordinates
 - EXIF data is stripped from images before upload; GPS is the only EXIF field kept, and only transiently in client state
 - `$jsonSchema` collection validation is used in MongoDB to enforce the data model at the DB level
+- Admin API routes must verify the session server-side with `auth()` before processing requests
+- `useSession()` must not be used — use `auth()` in server components and route handlers only
 
 ## External Integrations
 
