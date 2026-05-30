@@ -12,22 +12,22 @@ Linnea is a personal wildflower observation journal. An admin user uploads photo
 
 ## Observation Creation Flow
 
-1. Admin uploads one to eight images
+1. Admin uploads one to eight images as a "batch" to be processed
 2. EXIF metadata is extracted client-side; identifying EXIF is stripped, **GPS coordinates are retained in client state only**
-3. Each image is uploaded to Cloudinary (free tier)
+3. Each image in the batch is uploaded to Cloudinary (free tier)
   - the returned URL is stored in the observation as `image` 
   - if the upload fails, abort the observation creation flow and return an error to the admin
   - do not proceed to iNaturalist scoring without a valid image URL
 4. iNaturalist `score_image` endpoint is called once for each uploaded image and corresponding lat/lng, and observed date
   - if the iNaturalist call fails entirely, surface the error to the admin and halt the flow
   - do not silently fall through to Claude
-5. Each `score_image` call returns up to 5 candidates with `combined_score`, `vision_score`, `frequency_score`, and taxon info; the UI presents all candidates across all calls for admin review
-6. Confidence assessment and API calls to Claude are determined by the following:
+5. Each `score_image` call returns up to 5 candidates with `combined_score`, `vision_score`, `frequency_score`, and taxon info; the UI presents all candidates for each processed image and allows the admin to select a best fit for each image (optional) and flag if additional review is required (optional).
+6. A call to Claude is made according to these rules:
 
-| Condition                                                | Claude called?                           | Confidence Source                                                         |
-| -------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
-| No candidates returned across all iNaturalist calls	 | Yes (skip selection step, no taxon hint) | Claude Response or observation discarded if no identification is returned |
-| Admin selects no candidate                               | Yes (no taxon hint)                      | Claude Response or observation discarded if no identification is returned |
+| Condition | Include Image in Claude Call? | Confidence Source |
+| --------- | -------------- | ----------------- |
+| No candidates returned across all iNaturalist calls	 | Yes (skip selection step, include all) | Claude Response or observation discarded if no identification is returned |
+| Admin selects no candidate                               | Yes (include)                      | Claude Response or observation discarded if no identification is returned |
 | Admin selects a candidate with `combined_score >= 85`    | No                                       | Set to `"high"`                                                           |
 | Admin selects a candidate and explicitly requests Claude | Yes                                      | Claude response (takes precedence over fast-path default)                 |
 | Admin selects a candidate with `combined_score < 85`     | Yes                                      | Claude response                                                           |
