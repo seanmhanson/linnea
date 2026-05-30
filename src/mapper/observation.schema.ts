@@ -18,7 +18,7 @@ const observationSchema = {
     locationName: { bsonType: "string" },
     observedAt: { bsonType: "date" },
     cultivated: { bsonType: "bool" },
-    image: { bsonType: "string" },
+    image: { bsonType: "string", minLength: 1 },
     confidence: { bsonType: "string", enum: ["high", "medium", "low"] },
     identificationNotes: { bsonType: "string" },
     description: { bsonType: "string" },

@@ -4,7 +4,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 // subject
 import { DatabaseProvider } from "@/src/provider/DatabaseProvider";
 
-describe("/src/provider/DatabaseProvider", () => {
+describe("src/provider/DatabaseProvider", () => {
   let mongod: MongoMemoryServer;
   let provider: DatabaseProvider;
 
