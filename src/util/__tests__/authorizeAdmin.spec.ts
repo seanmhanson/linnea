@@ -31,7 +31,8 @@ describe("src/util/authorizeAdmin.ts", () => {
       });
 
       afterEach(() => {
-        process.env.ADMIN_PASSWORD = originalPassword;
+        if (originalPassword === undefined) delete process.env.ADMIN_PASSWORD;
+        else process.env.ADMIN_PASSWORD = originalPassword;
       });
 
       it("returns null when ADMIN_PASSWORD is not set", () => {

@@ -1,3 +1,4 @@
+import "server-only";
 import { createHash, timingSafeEqual } from "crypto";
 
 type AdminUser = { id: string; name: string };
@@ -11,7 +12,7 @@ function authorizeAdmin(password: string | undefined): AdminUser | null {
 
 /**
  * This is a very simple password check for MVP purposes.
- * TODO: replace with an auth mechanism for multiple users and hashing/sessions
+ * TODO: replace with a more robust auth mechanism (multi-user, rate limiting) and store a *hashed* password (e.g., argon2/bcrypt) rather than a plaintext env var.
  *
  * @param password - the password to check against the expected admin password
  * @returns boolean indicating if the password is correct
