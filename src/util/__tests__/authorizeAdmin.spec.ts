@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { authorizeAdmin } from "@/src/util/authorizeAdmin";
 
 describe("src/util/authorizeAdmin.ts", () => {
@@ -22,9 +22,21 @@ describe("src/util/authorizeAdmin.ts", () => {
       expect(authorizeAdmin(undefined)).toBeNull();
     });
 
-    it("returns null when ADMIN_PASSWORD is not set", () => {
-      delete process.env.ADMIN_PASSWORD;
-      expect(authorizeAdmin("any-password")).toBeNull();
+    describe("when ADMIN_PASSWORD is not set", () => {
+      let originalPassword: string | undefined;
+
+      beforeEach(() => {
+        originalPassword = process.env.ADMIN_PASSWORD;
+        delete process.env.ADMIN_PASSWORD;
+      });
+
+      afterEach(() => {
+        process.env.ADMIN_PASSWORD = originalPassword;
+      });
+
+      it("returns null when ADMIN_PASSWORD is not set", () => {
+        expect(authorizeAdmin("any-password")).toBeNull();
+      });
     });
   });
 });
