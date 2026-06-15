@@ -16,6 +16,9 @@ export default defineConfig({
           name: "unit",
           include: ["src/**/__tests__/*.spec.ts", "src/**/__tests__/*.spec.tsx"],
           environment: "node",
+          alias: {
+            "server-only": "@/src/util/__mocks__/server-only.ts",
+          },
         },
       },
       {
@@ -26,6 +29,9 @@ export default defineConfig({
           name: "integration",
           include: ["src/**/__tests__/*.int.ts", "src/**/__tests__/*.int.tsx"],
           environment: "node",
+          alias: {
+            "server-only": "@/src/util/__mocks__/server-only.ts",
+          },
         },
       },
     ],

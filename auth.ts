@@ -18,7 +18,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       authorize: (credentials) =>
-        authorizeAdmin(typeof credentials?.password === "string" ? credentials.password : undefined),
+        authorizeAdmin(
+          typeof credentials?.password === "string" ? credentials.password : undefined
+        ),
     }),
   ],
   secret: process.env.AUTH_SECRET,
