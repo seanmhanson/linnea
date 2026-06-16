@@ -112,11 +112,12 @@ Key scripts:
 ## Testing
 
 ### Overview
-Testing uses `vitest` and configures two named projects
+Testing uses `vitest` and configures three named projects
 
 | Project | Pattern | Notes |
 | ------- | ------- | ----- |
-| unit | `src/**/__tests__/*.spec.ts(.tsx)` | Mock all external deps |
+| unit-node | `src/**/__tests__/*.spec.ts(.tsx)`, `lib/**/__tests__/*.spec.ts(.tsx)` | Node runtime; mock all external deps |
+| unit-dom | `components/**/__tests__/*.spec.ts(.tsx)` | `jsdom` runtime for client component tests |
 | integration | `src/**/__tests__/*.int.ts(.tsx)` | Use `mongodb-memory-server`; never mock MongoClient |
 
 ### File and Directory Structure
@@ -151,3 +152,11 @@ Test files and their subjects are identifiable due to co-location. Given a subje
 - use `vi.stubEnv` and `vi.unstubAllEnvs` for overriding `env` variables and values on `process`
   - use native deletion for deleting these values when required
 - mock constructors require regular `function` expressions, not arrow functions
+
+## Verification Requirements
+
+- **Unit tests** — run `yarn test:unit` for changes touching application logic, components, utilities, or shared helpers
+- **Integration tests** — run `yarn test:integration` if this is the first commit on a branch, or if any changed file traces back to a module tree that already has matching `.int.ts(x)` coverage
+- **Build** — run `yarn build` after changes that affect routes, config, auth, server components, or TypeScript types
+- **Linting** — run `yarn lint` before merging any change
+- **Formatting** — run `yarn format:check` before merging any change
