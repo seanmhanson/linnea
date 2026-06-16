@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { UploadResult } from "@/src/mapper/upload";
+import { stripImageMetadata } from "@/src/util/stripImageMetadata";
 
 type FileStatus = "idle" | "uploading" | "done" | "error";
 
@@ -37,9 +38,10 @@ export default function UploadZone({ onUploadComplete }: Props) {
     for (let i = 0; i < capped.length; i++) {
       updateEntry(i, { status: "uploading" });
       const formData = new FormData();
-      formData.append("file", capped[i]);
 
       try {
+        const strippedImage = await stripImageMetadata(capped[i]);
+        formData.append("file", strippedImage, capped[i].name);
         const response = await fetch("/api/upload", { method: "POST", body: formData });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));

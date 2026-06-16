@@ -2,8 +2,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/dom";
 import { cleanup, render } from "@testing-library/react";
 
+vi.mock("@/src/util/stripImageMetadata", () => ({
+  stripImageMetadata: vi.fn(async (file: File) => file),
+}));
+
 // subject
 import UploadZone from "@/components/admin/UploadZone";
+import { stripImageMetadata } from "@/src/util/stripImageMetadata";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -32,9 +37,12 @@ const sampleResult = {
   extractedDate: null,
 };
 
+const mockStripImageMetadata = vi.mocked(stripImageMetadata);
+
 describe("components/admin/UploadZone", () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    mockStripImageMetadata.mockClear();
   });
 
   afterEach(() => {
@@ -52,6 +60,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.change(input, { target: { files: [file] } });
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+      expect(mockStripImageMetadata).toHaveBeenCalledWith(file);
 
       const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
       expect(url).toBe("/api/upload");
@@ -68,6 +77,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.change(input, { target: { files: [makeFile()] } });
 
       await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith([sampleResult]));
+      expect(mockStripImageMetadata).toHaveBeenCalledWith(expect.any(File));
     });
 
     it("shows done status after successful upload", async () => {
@@ -92,6 +102,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+      expect(mockStripImageMetadata).toHaveBeenCalledWith(file);
 
       const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
       expect(url).toBe("/api/upload");
@@ -107,6 +118,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.change(input, { target: { files: [makeFile("bad.jpg")] } });
 
       await waitFor(() => expect(screen.getByText("error: Upload failed")).toBeTruthy());
+      expect(mockStripImageMetadata).toHaveBeenCalledWith(expect.any(File));
     });
 
     it("does not call onUploadComplete when all files fail", async () => {
@@ -118,6 +130,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.change(input, { target: { files: [makeFile()] } });
 
       await waitFor(() => screen.getByText(/error/i));
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
       expect(onUploadComplete).not.toHaveBeenCalled();
     });
   });
@@ -132,6 +145,7 @@ describe("components/admin/UploadZone", () => {
       fireEvent.change(input, { target: { files } });
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(8));
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(8);
     });
   });
 });
