@@ -16,7 +16,9 @@ async function processUpload(buffer: Buffer): Promise<UploadResult> {
     // EXIF parse failure is non-fatal; proceed with nulls
   }
 
-  const { data: strippedBuffer, info } = await sharp(buffer).toBuffer({ resolveWithObject: true });
+  const { data: strippedBuffer, info } = await sharp(buffer)
+    .rotate()
+    .toBuffer({ resolveWithObject: true });
   if (!info.format) {
     throw new Error("Unable to determine image format");
   }

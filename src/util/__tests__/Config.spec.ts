@@ -109,7 +109,9 @@ describe("src/util/Config", () => {
         });
 
         it(`throws when ${configKey} is missing`, () => {
-          expect(() => getConfig()).toThrow(`Missing required configuration for ${envKey}`);
+          expect(() => getConfig()[configKey]).toThrow(
+            `Missing required configuration for ${envKey}`
+          );
         });
       });
     });

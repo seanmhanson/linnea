@@ -22,6 +22,9 @@ export default function UploadPage() {
                 <a href={r.cloudinaryUrl} target="_blank" rel="noreferrer">
                   {r.cloudinaryUrl}
                 </a>
+                {r.extractedDate && (
+                  <div style={{ fontSize: 12, color: "#666" }}>EXIF date: {r.extractedDate}</div>
+                )}
               </li>
             ))}
           </ul>

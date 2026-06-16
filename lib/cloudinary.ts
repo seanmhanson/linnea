@@ -11,10 +11,21 @@ function configureCloudinary() {
   });
 }
 
-async function uploadImage(buffer: Buffer, mimeType: string): Promise<string> {
+async function uploadImage(buffer: Buffer, _mimeType: string): Promise<string> {
   configureCloudinary();
-  const dataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
-  const result = await cloudinary.uploader.upload(dataUri, { resource_type: "image" });
+
+  const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ resource_type: "image" }, (error, res) => {
+      if (error || !res?.secure_url) {
+        reject(error ?? new Error("Cloudinary upload failed"));
+        return;
+      }
+      resolve(res as { secure_url: string });
+    });
+
+    stream.end(buffer);
+  });
+
   return result.secure_url;
 }
 

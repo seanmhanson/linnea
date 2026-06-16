@@ -19,16 +19,20 @@ export class Config {
 
   public readonly mongoUri: string;
   public readonly dbName: string;
-  public readonly cloudinaryCloudName: string;
-  public readonly cloudinaryApiKey: string;
-  public readonly cloudinaryApiSecret: string;
+
+  public get cloudinaryCloudName(): string {
+    return this.getRequired("CLOUDINARY_CLOUD_NAME");
+  }
+  public get cloudinaryApiKey(): string {
+    return this.getRequired("CLOUDINARY_API_KEY");
+  }
+  public get cloudinaryApiSecret(): string {
+    return this.getRequired("CLOUDINARY_API_SECRET");
+  }
 
   private constructor() {
     this.mongoUri = this.getEnvOrDefault("MONGODB_URI");
     this.dbName = this.getEnvOrDefault("DB_NAME");
-    this.cloudinaryCloudName = this.getRequired("CLOUDINARY_CLOUD_NAME");
-    this.cloudinaryApiKey = this.getRequired("CLOUDINARY_API_KEY");
-    this.cloudinaryApiSecret = this.getRequired("CLOUDINARY_API_SECRET");
   }
 
   private getRequired(key: RequiredKey): string {

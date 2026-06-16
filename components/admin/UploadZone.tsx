@@ -80,7 +80,14 @@ export default function UploadZone({ onUploadComplete }: Props) {
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         role="button"
+        tabIndex={0}
         aria-label="Upload images"
         style={{
           border: `2px dashed ${dragOver ? "#0070f3" : "#ccc"}`,
