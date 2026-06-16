@@ -21,6 +21,9 @@ async function processUpload(buffer: Buffer): Promise<UploadResult> {
   }
 
   const { data: strippedBuffer, info } = await sharp(buffer).toBuffer({ resolveWithObject: true });
+  if (!info.format) {
+    throw new Error("Unable to determine image format");
+  }
   const cloudinaryUrl = await uploadImage(strippedBuffer, `image/${info.format}`);
 
   return { cloudinaryUrl, extractedDate, extractedLat, extractedLng };

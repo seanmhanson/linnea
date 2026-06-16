@@ -98,7 +98,10 @@ export default function UploadZone({ onUploadComplete }: Props) {
         accept="image/*"
         multiple
         style={{ display: "none" }}
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.currentTarget.value = "";
+        }}
       />
       {entries.length > 0 && (
         <ul style={{ marginTop: 16, listStyle: "none", padding: 0 }}>
