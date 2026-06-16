@@ -8,7 +8,7 @@ async function processUpload(buffer: Buffer): Promise<UploadResult> {
   let extractedDate: string | null = null;
 
   try {
-    const exif = await exifr.parse(buffer, { gps: true, tiff: true });
+    const exif = await exifr.parse(buffer, { tiff: true });
     if (exif) {
       extractedDate = exif.DateTimeOriginal ?? null;
     }

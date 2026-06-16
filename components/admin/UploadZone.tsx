@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import type { DragEvent } from "react";
 import type { UploadResult } from "@/src/mapper/upload";
 
 type FileStatus = "idle" | "uploading" | "done" | "error";
@@ -63,7 +64,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
     uploadFiles(Array.from(files));
   }
 
-  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
     e.preventDefault();
     setDragOver(false);
     handleFiles(e.dataTransfer.files);
