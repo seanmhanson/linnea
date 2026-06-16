@@ -47,12 +47,10 @@ describe("src/controller/UploadController", () => {
 
   describe("#processUpload", () => {
     describe("when EXIF data is present", () => {
-      it("returns cloudinaryUrl, extractedDate, extractedLat, and extractedLng", async () => {
-        const date = new Date("2024-05-01T10:00:00Z");
+      it("returns cloudinaryUrl and extractedDate", async () => {
+        const date = "2024-05-01T10:00:00.000Z";
         mockExifrParse.mockResolvedValueOnce({
           DateTimeOriginal: date,
-          latitude: 40.7128,
-          longitude: -74.006,
         });
         mockSharp.mockReturnValueOnce(makeSharpMock() as never);
 
@@ -61,14 +59,12 @@ describe("src/controller/UploadController", () => {
         expect(result).toEqual({
           cloudinaryUrl: fakeCloudinaryUrl,
           extractedDate: date,
-          extractedLat: 40.7128,
-          extractedLng: -74.006,
         });
       });
     });
 
     describe("when no EXIF data is present", () => {
-      it("returns null for date, lat, and lng", async () => {
+      it("returns null for extractedDate", async () => {
         mockExifrParse.mockResolvedValueOnce(null);
         mockSharp.mockReturnValueOnce(makeSharpMock() as never);
 
@@ -77,14 +73,12 @@ describe("src/controller/UploadController", () => {
         expect(result).toEqual({
           cloudinaryUrl: fakeCloudinaryUrl,
           extractedDate: null,
-          extractedLat: null,
-          extractedLng: null,
         });
       });
     });
 
     describe("when EXIF parsing throws", () => {
-      it("returns null for date, lat, and lng and continues", async () => {
+      it("returns null for extractedDate and continues", async () => {
         mockExifrParse.mockRejectedValueOnce(new Error("EXIF parse error"));
         mockSharp.mockReturnValueOnce(makeSharpMock() as never);
 
@@ -93,8 +87,6 @@ describe("src/controller/UploadController", () => {
         expect(result).toEqual({
           cloudinaryUrl: fakeCloudinaryUrl,
           extractedDate: null,
-          extractedLat: null,
-          extractedLng: null,
         });
       });
     });

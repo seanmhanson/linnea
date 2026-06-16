@@ -5,16 +5,12 @@ import { uploadImage } from "@/lib/cloudinary";
 import type { UploadResult } from "@/src/mapper/upload";
 
 async function processUpload(buffer: Buffer): Promise<UploadResult> {
-  let extractedDate: Date | null = null;
-  let extractedLat: number | null = null;
-  let extractedLng: number | null = null;
+  let extractedDate: string | null = null;
 
   try {
     const exif = await exifr.parse(buffer, { gps: true, tiff: true });
     if (exif) {
       extractedDate = exif.DateTimeOriginal ?? null;
-      extractedLat = exif.latitude ?? null;
-      extractedLng = exif.longitude ?? null;
     }
   } catch {
     // EXIF parse failure is non-fatal; proceed with nulls
@@ -26,7 +22,7 @@ async function processUpload(buffer: Buffer): Promise<UploadResult> {
   }
   const cloudinaryUrl = await uploadImage(strippedBuffer, `image/${info.format}`);
 
-  return { cloudinaryUrl, extractedDate, extractedLat, extractedLng };
+  return { cloudinaryUrl, extractedDate };
 }
 
 export { processUpload };

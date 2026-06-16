@@ -30,8 +30,6 @@ function makeErrorResponse(status: number, body: object) {
 const sampleResult = {
   cloudinaryUrl: "https://res.cloudinary.com/test/image.jpg",
   extractedDate: null,
-  extractedLat: null,
-  extractedLng: null,
 };
 
 describe("components/admin/UploadZone", () => {
