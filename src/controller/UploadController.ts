@@ -1,21 +1,9 @@
 import "server-only";
-import exifr from "exifr";
 import sharp from "sharp";
 import { uploadImage } from "@/lib/cloudinary";
 import type { UploadResult } from "@/src/mapper/upload";
 
-async function processUpload(buffer: Buffer): Promise<UploadResult> {
-  let extractedDate: string | null = null;
-
-  try {
-    const exif = await exifr.parse(buffer, { tiff: true });
-    if (exif) {
-      extractedDate = exif.DateTimeOriginal ?? null;
-    }
-  } catch {
-    // EXIF parse failure is non-fatal; proceed with nulls
-  }
-
+async function processUpload(buffer: Buffer, extractedDate: string | null): Promise<UploadResult> {
   const { data: strippedBuffer, info } = await sharp(buffer)
     .rotate()
     .toBuffer({ resolveWithObject: true });

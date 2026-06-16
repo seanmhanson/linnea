@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { DragEvent } from "react";
 import type { UploadResult } from "@/src/mapper/upload";
+import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
 
 type FileStatus = "idle" | "uploading" | "done" | "error";
@@ -40,8 +41,12 @@ export default function UploadZone({ onUploadComplete }: Props) {
       const formData = new FormData();
 
       try {
+        const extractedDate = await extractImageDate(capped[i]);
         const strippedImage = await stripImageMetadata(capped[i]);
         formData.append("file", strippedImage, capped[i].name);
+        if (extractedDate) {
+          formData.append("extractedDate", extractedDate);
+        }
         const response = await fetch("/api/upload", { method: "POST", body: formData });
         if (!response.ok) {
           const body = await response.json().catch(() => ({}));
@@ -51,8 +56,9 @@ export default function UploadZone({ onUploadComplete }: Props) {
           updateEntry(i, { status: "done" });
           results.push(result);
         }
-      } catch {
-        updateEntry(i, { status: "error", error: "Network error" });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Upload failed";
+        updateEntry(i, { status: "error", error: message });
       }
     }
 

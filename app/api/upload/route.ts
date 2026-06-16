@@ -20,9 +20,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
   }
 
+  const extractedDateValue = formData.get("extractedDate");
+  const extractedDate =
+    typeof extractedDateValue === "string" && extractedDateValue.length > 0
+      ? extractedDateValue
+      : null;
+
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await processUpload(buffer);
+    const result = await processUpload(buffer, extractedDate);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Upload failed";

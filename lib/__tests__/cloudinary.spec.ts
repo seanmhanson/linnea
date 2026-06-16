@@ -4,7 +4,7 @@ vi.mock("cloudinary", () => ({
   v2: {
     config: vi.fn(),
     uploader: {
-      upload: vi.fn(),
+      upload_stream: vi.fn(),
     },
   },
 }));
@@ -21,11 +21,32 @@ vi.mock("@/src/util/Config", () => ({
 import { uploadImage } from "@/lib/cloudinary";
 import { v2 as cloudinary } from "cloudinary";
 
-const mockUpload = vi.mocked(cloudinary.uploader.upload);
+const mockUploadStream = vi.mocked(cloudinary.uploader.upload_stream);
+
+function makeUploadStreamMock(secureUrl?: string, error?: Error) {
+  return (
+    options: { resource_type: string },
+    callback: (err: Error | null, res?: { secure_url: string }) => void
+  ) => {
+    expect(options).toEqual({ resource_type: "image" });
+
+    return {
+      end: (buffer: Buffer) => {
+        expect(buffer).toBeInstanceOf(Buffer);
+        if (error) {
+          callback(error);
+          return;
+        }
+
+        callback(null, { secure_url: secureUrl ?? "https://res.cloudinary.com/test/image.jpg" });
+      },
+    };
+  };
+}
 
 describe("lib/cloudinary", () => {
   beforeEach(() => {
-    mockUpload.mockReset();
+    mockUploadStream.mockReset();
   });
 
   afterEach(() => {
@@ -35,20 +56,19 @@ describe("lib/cloudinary", () => {
   describe("#uploadImage", () => {
     it("calls cloudinary upload with a base64 data URI", async () => {
       const buffer = Buffer.from("fake-image-bytes");
-      const mimeType = "image/jpeg";
-      const expectedDataUri = `data:${mimeType};base64,${buffer.toString("base64")}`;
-      mockUpload.mockResolvedValueOnce({
-        secure_url: "https://res.cloudinary.com/test/image.jpg",
-      } as never);
+      mockUploadStream.mockImplementationOnce(makeUploadStreamMock());
 
-      await uploadImage(buffer, mimeType);
+      await uploadImage(buffer, "image/jpeg");
 
-      expect(mockUpload).toHaveBeenCalledWith(expectedDataUri, { resource_type: "image" });
+      expect(mockUploadStream).toHaveBeenCalledWith(
+        { resource_type: "image" },
+        expect.any(Function)
+      );
     });
 
     it("returns the secure_url from the upload result", async () => {
       const url = "https://res.cloudinary.com/test/image.jpg";
-      mockUpload.mockResolvedValueOnce({ secure_url: url } as never);
+      mockUploadStream.mockImplementationOnce(makeUploadStreamMock(url));
 
       const result = await uploadImage(Buffer.from("bytes"), "image/png");
 
@@ -56,7 +76,9 @@ describe("lib/cloudinary", () => {
     });
 
     it("propagates errors from cloudinary upload", async () => {
-      mockUpload.mockRejectedValueOnce(new Error("Cloudinary upload failed"));
+      mockUploadStream.mockImplementationOnce(
+        makeUploadStreamMock(undefined, new Error("Cloudinary upload failed"))
+      );
 
       await expect(uploadImage(Buffer.from("bytes"), "image/jpeg")).rejects.toThrow(
         "Cloudinary upload failed"
