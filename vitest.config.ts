@@ -14,7 +14,14 @@ export default defineConfig({
         },
         test: {
           name: "unit",
-          include: ["src/**/__tests__/*.spec.ts", "src/**/__tests__/*.spec.tsx"],
+          include: [
+            "src/**/__tests__/*.spec.ts",
+            "src/**/__tests__/*.spec.tsx",
+            "lib/**/__tests__/*.spec.ts",
+            "lib/**/__tests__/*.spec.tsx",
+            "components/**/__tests__/*.spec.ts",
+            "components/**/__tests__/*.spec.tsx",
+          ],
           environment: "node",
           alias: {
             "server-only": "@/src/util/__mocks__/server-only.ts",
