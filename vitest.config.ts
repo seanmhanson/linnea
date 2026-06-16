@@ -13,16 +13,27 @@ export default defineConfig({
           tsconfigPaths: true,
         },
         test: {
-          name: "unit",
+          name: "unit-node",
           include: [
             "src/**/__tests__/*.spec.ts",
             "src/**/__tests__/*.spec.tsx",
             "lib/**/__tests__/*.spec.ts",
             "lib/**/__tests__/*.spec.tsx",
-            "components/**/__tests__/*.spec.ts",
-            "components/**/__tests__/*.spec.tsx",
           ],
           environment: "node",
+          alias: {
+            "server-only": "@/src/util/__mocks__/server-only.ts",
+          },
+        },
+      },
+      {
+        resolve: {
+          tsconfigPaths: true,
+        },
+        test: {
+          name: "unit-dom",
+          include: ["components/**/__tests__/*.spec.ts", "components/**/__tests__/*.spec.tsx"],
+          environment: "jsdom",
           alias: {
             "server-only": "@/src/util/__mocks__/server-only.ts",
           },

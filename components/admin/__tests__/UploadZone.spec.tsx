@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { screen, fireEvent, waitFor } from "@testing-library/dom";
+import { cleanup, render } from "@testing-library/react";
 
 // subject
 import UploadZone from "@/components/admin/UploadZone";
@@ -39,6 +39,10 @@ describe("components/admin/UploadZone", () => {
     mockFetch.mockReset();
   });
 
+  afterEach(() => {
+    cleanup();
+  });
+
   describe("when a file is selected via file input", () => {
     it("posts the file to /api/upload", async () => {
       mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
@@ -75,7 +79,7 @@ describe("components/admin/UploadZone", () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, { target: { files: [makeFile("cat.jpg")] } });
 
-      await waitFor(() => expect(screen.getByText("done")).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText("done")).toBeTruthy());
     });
   });
 
@@ -104,7 +108,7 @@ describe("components/admin/UploadZone", () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, { target: { files: [makeFile("bad.jpg")] } });
 
-      await waitFor(() => expect(screen.getByText("error: Upload failed")).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText("error: Upload failed")).toBeTruthy());
     });
 
     it("does not call onUploadComplete when all files fail", async () => {
@@ -122,7 +126,7 @@ describe("components/admin/UploadZone", () => {
 
   describe("when more than 8 files are selected", () => {
     it("only uploads the first 8 files", async () => {
-      mockFetch.mockResolvedValue(makeOkResponse(sampleResult));
+      mockFetch.mockImplementation(() => makeOkResponse(sampleResult));
       render(<UploadZone onUploadComplete={vi.fn()} />);
 
       const files = Array.from({ length: 10 }, (_, i) => makeFile(`file${i}.jpg`));

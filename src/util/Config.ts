@@ -6,12 +6,12 @@ const defaults: Record<string, string> = {
   DB_NAME: "linnea",
 } as const;
 
-const requiredKeys = [
+type RequiredKeys = readonly [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
-] as const;
-type RequiredKey = (typeof requiredKeys)[number];
+];
+type RequiredKey = RequiredKeys[number];
 
 export class Config {
   private static instance: Config | null = null;
