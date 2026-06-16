@@ -5,6 +5,7 @@ import type { DragEvent } from "react";
 import type { UploadResult } from "@/src/mapper/upload";
 import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
+import styles from "./uploadZone.module.css";
 
 type FileStatus = "idle" | "uploading" | "done" | "error";
 
@@ -97,34 +98,32 @@ export default function UploadZone({ onUploadComplete }: Props) {
         role="button"
         tabIndex={0}
         aria-label="Upload images"
-        style={{
-          border: `2px dashed ${dragOver ? "#0070f3" : "#ccc"}`,
-          borderRadius: 8,
-          padding: 32,
-          textAlign: "center",
-          cursor: "pointer",
-        }}
+        className={dragOver ? styles["upload-zone__drag-over"] : styles["upload-zone"]}
       >
         <p>Drag and drop images here, or click to select</p>
-        <p style={{ fontSize: 12, color: "#666" }}>Up to {MAX_FILES} images</p>
+        <p className={styles["upload-zone--subtext"]}>Up to {MAX_FILES} images</p>
       </div>
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
         multiple
-        style={{ display: "none" }}
+        className={styles["upload-zone--input"]}
         onChange={(e) => {
           handleFiles(e.target.files);
           e.currentTarget.value = "";
         }}
       />
       {entries.length > 0 && (
-        <ul style={{ marginTop: 16, listStyle: "none", padding: 0 }}>
+        <ul className={styles["upload-zone--list"]}>
           {entries.map(({ file, status, error }, i) => (
-            <li key={i} style={{ marginBottom: 4 }}>
+            <li key={i} className={styles["upload-zone--list-item"]}>
               <span>{file.name}</span>
-              <span style={{ marginLeft: 8, color: status === "error" ? "red" : "#666" }}>
+              <span
+                className={
+                  status === "error" ? styles["upload-zone--error"] : styles["upload-zone--status"]
+                }
+              >
                 {status === "error" ? `error: ${error}` : status}
               </span>
             </li>

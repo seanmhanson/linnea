@@ -3,27 +3,28 @@
 import { useState } from "react";
 import UploadZone from "@/components/admin/UploadZone";
 import type { UploadResult } from "@/src/mapper/upload";
+import styles from "./page.module.css";
 
 export default function UploadPage() {
   const [results, setResults] = useState<UploadResult[]>([]);
 
   return (
-    <main style={{ maxWidth: 640, margin: "0 auto", padding: 32 }}>
-      <h1>Upload Observations</h1>
+    <main className={styles["upload-container"]}>
+      <h1 className={styles["upload-header"]}>Upload Observations</h1>
       <UploadZone
         onUploadComplete={(newResults) => setResults((prev) => [...prev, ...newResults])}
       />
       {results.length > 0 && (
-        <section style={{ marginTop: 32 }}>
+        <section className={styles["upload-results"]}>
           <h2>Uploaded</h2>
-          <ul style={{ listStyle: "none", padding: 0 }}>
+          <ul className={styles["upload-results-list"]}>
             {results.map((r, i) => (
-              <li key={i} style={{ marginBottom: 8 }}>
+              <li key={i} className={styles["upload-results--list-item"]}>
                 <a href={r.cloudinaryUrl} target="_blank" rel="noreferrer">
                   {r.cloudinaryUrl}
                 </a>
                 {r.extractedDate && (
-                  <div style={{ fontSize: 12, color: "#666" }}>EXIF date: {r.extractedDate}</div>
+                  <div className={styles["upload-results--date"]}>EXIF date: {r.extractedDate}</div>
                 )}
               </li>
             ))}
