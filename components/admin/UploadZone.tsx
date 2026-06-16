@@ -62,7 +62,7 @@ export default function UploadZone({ onUploadComplete }: Props) {
       }
     }
 
-    if (results.length > 0) {
+    if (results.length === capped.length) {
       onUploadComplete(results);
     }
   }

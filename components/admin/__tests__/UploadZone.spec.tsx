@@ -53,6 +53,7 @@ describe("components/admin/UploadZone", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     cleanup();
   });
 

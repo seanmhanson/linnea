@@ -54,7 +54,7 @@ describe("lib/cloudinary", () => {
   });
 
   describe("#uploadImage", () => {
-    it("calls cloudinary upload with a base64 data URI", async () => {
+    it("calls cloudinary upload_stream with the provided buffer", async () => {
       const buffer = Buffer.from("fake-image-bytes");
       mockUploadStream.mockImplementationOnce(makeUploadStreamMock());
 

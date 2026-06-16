@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { processUpload } from "@/src/controller/UploadController";
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session) {
