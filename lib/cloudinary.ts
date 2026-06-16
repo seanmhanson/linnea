@@ -11,7 +11,7 @@ function configureCloudinary() {
   });
 }
 
-async function uploadImage(buffer: Buffer, _mimeType: string): Promise<string> {
+async function uploadImage(buffer: Buffer): Promise<string> {
   configureCloudinary();
 
   const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
