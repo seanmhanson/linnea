@@ -10,7 +10,7 @@ async function processUpload(buffer: Buffer, extractedDate: string | null): Prom
   if (!info.format) {
     throw new Error("Unable to determine image format");
   }
-  const cloudinaryUrl = await uploadImage(strippedBuffer, `image/${info.format}`);
+  const cloudinaryUrl = await uploadImage(strippedBuffer);
 
   return { cloudinaryUrl, extractedDate };
 }

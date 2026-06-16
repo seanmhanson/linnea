@@ -16,7 +16,6 @@ import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
 
 const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
 
 function makeFile(name = "photo.jpg", type = "image/jpeg"): File {
   return new File(["bytes"], name, { type });
@@ -47,6 +46,7 @@ const mockStripImageMetadata = vi.mocked(stripImageMetadata);
 
 describe("components/admin/UploadZone", () => {
   beforeEach(() => {
+    vi.stubGlobal("fetch", mockFetch);
     mockFetch.mockReset();
     mockExtractImageDate.mockReset();
     mockStripImageMetadata.mockClear();

@@ -98,12 +98,12 @@ describe("src/controller/UploadController", () => {
       expect(sharpMock.toBuffer).toHaveBeenCalledWith({ resolveWithObject: true });
     });
 
-    it("uploads the stripped buffer with the correct MIME type", async () => {
+    it("uploads the stripped buffer", async () => {
       mockSharp.mockReturnValueOnce(makeSharpMock("png") as never);
 
       await processUpload(fakeBuffer, null);
 
-      expect(mockUploadImage).toHaveBeenCalledWith(fakeStrippedBuffer, "image/png");
+      expect(mockUploadImage).toHaveBeenCalledWith(fakeStrippedBuffer);
     });
   });
 });
