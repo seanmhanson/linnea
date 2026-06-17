@@ -1,0 +1,38 @@
+.sign-out-button {
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+  background-color: var(--color-primary);
+  font-size: 0.9rem;
+  height: 40px;
+  border-radius: 16px;
+  transition: background-color 250ms ease-in-out;
+  font-weight: 300;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px;
+  border: 2px solid var(--color-secondary);
+}
+
+.sign-out-button-link {
+  composes: sign-out-button;
+  text-decoration: none;
+  line-height: 1rem;
+}
+
+.sign-out-button-link:link,
+.sign-out-button-link:visited {
+  background-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.sign-out-button:hover,
+.sign-out-button-link:hover {
+  background-color: var(--color-background-hover);
+  cursor: pointer;
+}
+.sign-out-button:active,
+.sign-out-button-link:active {
+  cursor: pointer;
+}

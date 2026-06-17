@@ -6,6 +6,13 @@ const defaults: Record<string, string> = {
   DB_NAME: "linnea",
 } as const;
 
+type RequiredKeys = readonly [
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
+type RequiredKey = RequiredKeys[number];
+
 export class Config {
   private static instance: Config | null = null;
   public static defaults = defaults;
@@ -13,9 +20,27 @@ export class Config {
   public readonly mongoUri: string;
   public readonly dbName: string;
 
+  public get cloudinaryCloudName(): string {
+    return this.getRequired("CLOUDINARY_CLOUD_NAME");
+  }
+  public get cloudinaryApiKey(): string {
+    return this.getRequired("CLOUDINARY_API_KEY");
+  }
+  public get cloudinaryApiSecret(): string {
+    return this.getRequired("CLOUDINARY_API_SECRET");
+  }
+
   private constructor() {
     this.mongoUri = this.getEnvOrDefault("MONGODB_URI");
     this.dbName = this.getEnvOrDefault("DB_NAME");
+  }
+
+  private getRequired(key: RequiredKey): string {
+    const value = process.env[key];
+    if (!value) {
+      throw new Error(`Missing required configuration for ${key}`);
+    }
+    return value;
   }
 
   private getEnvOrDefault(key: keyof typeof Config.defaults): string {

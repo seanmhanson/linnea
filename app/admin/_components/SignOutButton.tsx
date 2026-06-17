@@ -1,4 +1,5 @@
 import { signOut } from "@/auth";
+import styles from "./signOutButton.module.css";
 
 export default function SignOutButton() {
   return (
@@ -8,7 +9,9 @@ export default function SignOutButton() {
         await signOut({ redirectTo: "/api/auth/signin" });
       }}
     >
-      <button type="submit">Sign out</button>
+      <button className={styles["sign-out-button"]} type="submit">
+        Sign out
+      </button>
     </form>
   );
 }

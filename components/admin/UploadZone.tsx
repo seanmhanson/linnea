@@ -1,0 +1,135 @@
+"use client";
+
+import { useRef, useState } from "react";
+import type { DragEvent } from "react";
+import type { UploadResult } from "@/src/mapper/upload";
+import { extractImageDate } from "@/src/util/extractImageDate";
+import { stripImageMetadata } from "@/src/util/stripImageMetadata";
+import styles from "./uploadZone.module.css";
+
+type FileStatus = "idle" | "uploading" | "done" | "error";
+
+type FileEntry = {
+  file: File;
+  status: FileStatus;
+  error?: string;
+};
+
+type Props = {
+  onUploadComplete: (results: UploadResult[]) => void;
+};
+
+const MAX_FILES = 8;
+
+export default function UploadZone({ onUploadComplete }: Props) {
+  const [entries, setEntries] = useState<FileEntry[]>([]);
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function updateEntry(index: number, patch: Partial<FileEntry>) {
+    setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));
+  }
+
+  async function uploadFiles(files: File[]) {
+    const capped = files.slice(0, MAX_FILES);
+    const initial: FileEntry[] = capped.map((file) => ({ file, status: "idle" }));
+    setEntries(initial);
+
+    const results: UploadResult[] = [];
+
+    for (let i = 0; i < capped.length; i++) {
+      updateEntry(i, { status: "uploading" });
+      const formData = new FormData();
+
+      try {
+        const extractedDate = await extractImageDate(capped[i]);
+        const strippedImage = await stripImageMetadata(capped[i]);
+        formData.append("file", strippedImage, capped[i].name);
+        if (extractedDate) {
+          formData.append("extractedDate", extractedDate);
+        }
+        const response = await fetch("/api/upload", { method: "POST", body: formData });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          updateEntry(i, { status: "error", error: body.error ?? "Upload failed" });
+        } else {
+          const result: UploadResult = await response.json();
+          updateEntry(i, { status: "done" });
+          results.push(result);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Upload failed";
+        updateEntry(i, { status: "error", error: message });
+      }
+    }
+
+    if (results.length === capped.length) {
+      onUploadComplete(results);
+    }
+  }
+
+  function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    uploadFiles(Array.from(files));
+  }
+
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(false);
+    handleFiles(e.dataTransfer.files);
+  }
+
+  return (
+    <div>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label="Upload images"
+        className={dragOver ? styles["upload-zone__drag-over"] : styles["upload-zone"]}
+      >
+        <p>Drag and drop images here, or click to select</p>
+        <p className={styles["upload-zone--subtext"]}>Up to {MAX_FILES} images</p>
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className={styles["upload-zone--input"]}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          e.currentTarget.value = "";
+        }}
+      />
+      {entries.length > 0 && (
+        <ul className={styles["upload-zone--list"]}>
+          {entries.map(({ file, status, error }, i) => (
+            <li key={i} className={styles["upload-zone--list-item"]}>
+              <span>{file.name}</span>
+              <span
+                className={
+                  status === "error" ? styles["upload-zone--error"] : styles["upload-zone--status"]
+                }
+              >
+                {status === "error" ? `error: ${error}` : status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
