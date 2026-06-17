@@ -1,22 +1,32 @@
 @use "palette" as *;
+@use "breakpoints" as bp;
 
 .upload-container {
   max-width: 720px;
   min-height: 280px;
   margin: 0 auto;
-  padding: 32px;
+  padding: 24px 32px;
   color: $color-text;
   background-color: $color-primary;
   border-radius: 16px;
   border: 2px solid $color-secondary;
+
+  @include bp.large-phone {
+    padding: 32px;
+  }
 }
 
 .upload-header {
   margin-top: 0px;
-  font-weight: 500;
   border-bottom: 1px dotted $color-background-hover;
   color: $color-text;
   opacity: 0.8;
+  font-size: 1.6rem;
+  font-weight: 500;
+
+  @include bp.phone {
+    font-size: 2rem;
+  }
 }
 
 .upload-results {

@@ -1,15 +1,20 @@
 @use "palette" as *;
 @use "fonts" as *;
+@use "breakpoints" as bp;
 
 .admin {
   min-height: 100dvh;
-  padding: 30px;
+  padding: 16px;
   background: $color-background;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
   font-family: $font-family-admin;
+
+  @include bp.large-phone {
+    padding: 30px;
+  }
 }
 
 :global(body) {
