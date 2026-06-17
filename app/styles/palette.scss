@@ -1,0 +1,14 @@
+// admin palette
+$color-background: #161b22;
+$color-primary: #0d1117;
+$color-secondary: #66b;
+$color-secondary-muted: #ddf;
+$color-background-hover: #3e4c9a;
+$color-text: #eef;
+$color-text-muted: #aab;
+$color-text-error: #f00;
+$color-interactive: #0070f3;
+$color-upload-done: color-mix(in srgb, $color-text-muted 85%, black);
+$color-upload-active: color-mix(in srgb, $color-text-muted 50%, white);
+$color-upload-error: color-mix(in srgb, $color-text-error 75%, black);
+$color-upload-pending: $color-text-muted;

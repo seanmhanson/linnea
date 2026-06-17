@@ -1,0 +1,51 @@
+// core breakpoint definitions
+$breakpoint-2xs: 320px;
+$breakpoint-xs: 375px;
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+$breakpoint-2xl: 1440px;
+
+// mixins aliased to device types
+@mixin small-phone {
+  @media (min-width: $breakpoint-2xs) {
+    @content;
+  }
+}
+
+@mixin phone {
+  @media (min-width: $breakpoint-xs) {
+    @content;
+  }
+}
+
+@mixin large-phone {
+  @media (min-width: $breakpoint-sm) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin small-laptop {
+  @media (min-width: $breakpoint-lg) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-xl) {
+    @content;
+  }
+}
+
+@mixin wide-desktop {
+  @media (min-width: $breakpoint-2xl) {
+    @content;
+  }
+}

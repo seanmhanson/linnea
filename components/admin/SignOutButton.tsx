@@ -1,5 +1,5 @@
 import { signOut } from "@/auth";
-import styles from "./signOutButton.module.css";
+import styles from "./SignOutButton.module.scss";
 
 export default function SignOutButton() {
   return (

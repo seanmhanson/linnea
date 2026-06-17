@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { auth } from "@/auth";
-import SignOutButton from "./_components/SignOutButton";
-import styles from "./layout.module.css";
+import SignOutButton from "../../components/admin/SignOutButton";
+import styles from "./layout.module.scss";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await auth();

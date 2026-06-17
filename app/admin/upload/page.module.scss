@@ -1,0 +1,61 @@
+@use "palette" as *;
+
+.upload-container {
+  max-width: 720px;
+  min-height: 280px;
+  margin: 0 auto;
+  padding: 32px;
+  color: $color-text;
+  background-color: $color-primary;
+  border-radius: 16px;
+  border: 2px solid $color-secondary;
+}
+
+.upload-header {
+  margin-top: 0px;
+  font-weight: 500;
+  border-bottom: 1px dotted $color-background-hover;
+  color: $color-text;
+  opacity: 0.8;
+}
+
+.upload-results {
+  margin-top: 32px;
+}
+
+.upload-results-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  column-gap: 24px;
+  row-gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.upload-results--list-item {
+  margin-bottom: 8px;
+}
+
+.upload-results--list-link {
+  text-align: center;
+  display: block;
+  font-size: 0.8rem;
+  color: $color-text-muted;
+}
+
+.upload-results--date {
+  font-size: 12px;
+  color: $color-text-muted;
+}
+
+.upload-results--thumbnail {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid $color-secondary;
+}

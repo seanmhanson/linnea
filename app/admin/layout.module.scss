@@ -1,0 +1,17 @@
+@use "palette" as *;
+@use "fonts" as *;
+
+.admin {
+  min-height: 100dvh;
+  padding: 30px;
+  background: $color-background;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-family: $font-family-admin;
+}
+
+:global(body) {
+  margin: 0;
+}

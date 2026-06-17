@@ -1,13 +1,14 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { DragEvent } from "react";
+import type { DragEvent, KeyboardEvent } from "react";
+import classnames from "classnames";
 import type { UploadResult } from "@/src/mapper/upload";
 import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
-import styles from "./uploadZone.module.css";
+import styles from "./UploadZone.module.scss";
 
-type FileStatus = "idle" | "uploading" | "done" | "error";
+type FileStatus = "waiting" | "uploading" | "done" | "error";
 
 type FileEntry = {
   file: File;
@@ -15,14 +16,50 @@ type FileEntry = {
   error?: string;
 };
 
-type Props = {
+type UploadZoneProps = {
   onUploadComplete: (results: UploadResult[]) => void;
+  maxFiles?: number;
 };
 
-const MAX_FILES = 8;
+const temporaryFixtureEntries: FileEntry[] = [
+  {
+    file: new File([""], "localUser/Pictures/botany/central-park/error_photo_2025-08-04.jpg"),
+    status: "error",
+  },
+  {
+    file: new File(
+      [""],
+      "localUser/Pictures/botany/central-park/error_with_reason_photo_2026-09-05.jpg"
+    ),
+    status: "error",
+    error: "Network error",
+  },
+  {
+    file: new File(
+      [""],
+      "localUser/Pictures/botany/central-park/error_with_long_reason_photo_2027-10-05.jpg"
+    ),
+    status: "error",
+    error:
+      "A significantly longer error message has occurred here without truncation or other UI handling, which may cause layout issues if not properly managed by the component's styles or structure.",
+  },
+  {
+    file: new File([""], "localUser/Pictures/botany/central-park/done_photo_2022-07-03.jpg"),
+    status: "done",
+  },
+  {
+    file: new File([""], "localUser/Pictures/botany/central-park/uploading_photo_2023-06-02.jpg"),
+    status: "uploading",
+  },
+  {
+    file: new File([""], "localUser/Pictures/botany/central-park/idle_photo_2024-05-01.jpg"),
+    status: "waiting",
+  },
+];
 
-export default function UploadZone({ onUploadComplete }: Props) {
-  const [entries, setEntries] = useState<FileEntry[]>([]);
+export default function UploadZone({ onUploadComplete, maxFiles = 8 }: UploadZoneProps) {
+  const [entries, setEntries] = useState<FileEntry[]>(temporaryFixtureEntries); // start with temporary fixtures for development/testing
+  const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,12 +68,13 @@ export default function UploadZone({ onUploadComplete }: Props) {
   }
 
   async function uploadFiles(files: File[]) {
-    const capped = files.slice(0, MAX_FILES);
-    const initial: FileEntry[] = capped.map((file) => ({ file, status: "idle" }));
+    const capped = files.slice(0, maxFiles);
+    const initial: FileEntry[] = capped.map((file) => ({ file, status: "waiting" }));
     setEntries(initial);
 
     const results: UploadResult[] = [];
 
+    setIsUploading(true);
     for (let i = 0; i < capped.length; i++) {
       updateEntry(i, { status: "uploading" });
       const formData = new FormData();
@@ -66,11 +104,34 @@ export default function UploadZone({ onUploadComplete }: Props) {
     if (results.length === capped.length) {
       onUploadComplete(results);
     }
+    setIsUploading(false);
   }
+
+  /**
+   *  Input event and file upload handlers
+   */
 
   function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     uploadFiles(Array.from(files));
+  }
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    handleFiles(e.target.files);
+    e.currentTarget.value = "";
+  }
+
+  /**
+   *  Drag/Drop area & input event handlers
+   */
+
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragOver(true);
+  }
+
+  function handleDragLeave() {
+    setDragOver(false);
   }
 
   function handleDrop(e: DragEvent<HTMLDivElement>) {
@@ -79,55 +140,85 @@ export default function UploadZone({ onUploadComplete }: Props) {
     handleFiles(e.dataTransfer.files);
   }
 
+  function handleClick() {
+    inputRef.current?.click();
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      inputRef.current?.click();
+    }
+  }
+
+  const fileListItem = ({ file, status, error }: FileEntry, i: number) => {
+    const errorStatus = error ? (
+      <>
+        Upload failed:
+        {error && error?.length > 40 ? <br /> : <> </>}
+        {error}
+      </>
+    ) : (
+      "Upload failed"
+    );
+    const statusText = status === "error" ? errorStatus : status;
+    return (
+      <li key={i} className={styles["upload-zone--list-item"]}>
+        <span className={styles["upload-zone--label"]}>File path</span>
+        <span
+          className={classnames(styles["upload-zone--path"], {
+            [styles["upload-zone--path__done"]]: status === "done",
+            [styles["upload-zone--path__error"]]: status === "error",
+            [styles["upload-zone--path__active"]]: status === "uploading",
+          })}
+        >
+          {file.name}
+        </span>
+
+        <span className={styles["upload-zone--label"]}>Upload status</span>
+        <span
+          className={classnames(styles["upload-zone--status"], {
+            [styles["upload-zone--status__done"]]: status === "done",
+            [styles["upload-zone--status__error"]]: status === "error",
+            [styles["upload-zone--status__active"]]: status === "uploading",
+          })}
+        >
+          {statusText}
+        </span>
+      </li>
+    );
+  };
+
   return (
     <div>
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            inputRef.current?.click();
-          }
-        }}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
         aria-label="Upload images"
-        className={dragOver ? styles["upload-zone__drag-over"] : styles["upload-zone"]}
+        className={classnames(styles["upload-zone"], {
+          [styles["upload-zone__drag-over"]]: dragOver,
+          [styles["upload-zone__disabled"]]: isUploading,
+        })}
       >
         <p>Drag and drop images here, or click to select</p>
-        <p className={styles["upload-zone--subtext"]}>Up to {MAX_FILES} images</p>
+        <p className={styles["upload-zone--subtext"]}>Up to {maxFiles} images</p>
       </div>
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
-        multiple
         className={styles["upload-zone--input"]}
-        onChange={(e) => {
-          handleFiles(e.target.files);
-          e.currentTarget.value = "";
-        }}
+        onChange={onInputChange}
+        multiple
       />
       {entries.length > 0 && (
         <ul className={styles["upload-zone--list"]}>
-          {entries.map(({ file, status, error }, i) => (
-            <li key={i} className={styles["upload-zone--list-item"]}>
-              <span>{file.name}</span>
-              <span
-                className={
-                  status === "error" ? styles["upload-zone--error"] : styles["upload-zone--status"]
-                }
-              >
-                {status === "error" ? `error: ${error}` : status}
-              </span>
-            </li>
-          ))}
+          {entries.map(({ file, status, error }, i) => fileListItem({ file, status, error }, i))}
         </ul>
       )}
     </div>
