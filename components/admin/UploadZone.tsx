@@ -21,44 +21,8 @@ type UploadZoneProps = {
   maxFiles?: number;
 };
 
-const temporaryFixtureEntries: FileEntry[] = [
-  {
-    file: new File([""], "localUser/Pictures/botany/central-park/error_photo_2025-08-04.jpg"),
-    status: "error",
-  },
-  {
-    file: new File(
-      [""],
-      "localUser/Pictures/botany/central-park/error_with_reason_photo_2026-09-05.jpg"
-    ),
-    status: "error",
-    error: "Network error",
-  },
-  {
-    file: new File(
-      [""],
-      "localUser/Pictures/botany/central-park/error_with_long_reason_photo_2027-10-05.jpg"
-    ),
-    status: "error",
-    error:
-      "A significantly longer error message has occurred here without truncation or other UI handling, which may cause layout issues if not properly managed by the component's styles or structure.",
-  },
-  {
-    file: new File([""], "localUser/Pictures/botany/central-park/done_photo_2022-07-03.jpg"),
-    status: "done",
-  },
-  {
-    file: new File([""], "localUser/Pictures/botany/central-park/uploading_photo_2023-06-02.jpg"),
-    status: "uploading",
-  },
-  {
-    file: new File([""], "localUser/Pictures/botany/central-park/idle_photo_2024-05-01.jpg"),
-    status: "waiting",
-  },
-];
-
 export default function UploadZone({ onUploadComplete, maxFiles = 8 }: UploadZoneProps) {
-  const [entries, setEntries] = useState<FileEntry[]>(temporaryFixtureEntries); // start with temporary fixtures for development/testing
+  const [entries, setEntries] = useState<FileEntry[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);

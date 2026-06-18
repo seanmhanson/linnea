@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import classnames from "classnames";
 import UploadZone from "@/components/admin/UploadZone";
 import type { UploadResult } from "@/src/mapper/upload";
+import { useBreakpoint } from "@/src/util/useBreakpoint";
 import styles from "./page.module.scss";
 
-function toSquareThumbnailUrl(cloudinaryUrl: string): string {
+function toSquareThumbnailUrl(cloudinaryUrl: string, size: number): string {
   const marker = "/upload/";
   const insertAt = cloudinaryUrl.indexOf(marker);
 
@@ -13,55 +15,14 @@ function toSquareThumbnailUrl(cloudinaryUrl: string): string {
     return cloudinaryUrl;
   }
 
-  const transformation = "c_fill,g_auto,h_150,w_150,f_auto,q_auto";
+  const transformation = `c_fill,g_auto,h_${size},w_${size},f_auto,q_auto`;
   return `${cloudinaryUrl.slice(0, insertAt + marker.length)}${transformation}/${cloudinaryUrl.slice(insertAt + marker.length)}`;
 }
 
-const temporaryFixtures: UploadResult[] = [
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651543/nvpnkvjszmqkb40a0jwp.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651584/wmjvky1gafuqwxonuq6s.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651597/xjh7bqzevmc91knofh2l.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651543/nvpnkvjszmqkb40a0jwp.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651584/wmjvky1gafuqwxonuq6s.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651597/xjh7bqzevmc91knofh2l.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651584/wmjvky1gafuqwxonuq6s.png",
-    extractedDate: null,
-  },
-  {
-    cloudinaryUrl:
-      "https://res.cloudinary.com/dynzu3y3k/image/upload/v1781651597/xjh7bqzevmc91knofh2l.png",
-    extractedDate: null,
-  },
-];
-
 export default function UploadPage() {
-  const [results, setResults] = useState<UploadResult[]>(temporaryFixtures);
+  const { isSmallViewport } = useBreakpoint();
+  const [results, setResults] = useState<UploadResult[]>([]);
+  const thumbnailSize = isSmallViewport ? 220 : 150;
 
   return (
     <main className={styles["upload-container"]}>
@@ -72,7 +33,11 @@ export default function UploadPage() {
       {results.length > 0 && (
         <section className={styles["upload-results"]}>
           <h2 className={styles["upload-header"]}>Uploaded</h2>
-          <ul className={styles["upload-results-list"]}>
+          <ul
+            className={classnames(styles["upload-results-list"], {
+              [styles["upload-results-list--single-column"]]: isSmallViewport,
+            })}
+          >
             {results.map((r, i) => (
               <li key={i} className={styles["upload-results--list-item"]}>
                 <a
@@ -82,12 +47,14 @@ export default function UploadPage() {
                   rel="noreferrer"
                 >
                   <img
-                    className={styles["upload-results--thumbnail"]}
-                    src={toSquareThumbnailUrl(r.cloudinaryUrl)}
+                    className={classnames(styles["upload-results--thumbnail"], {
+                      [styles["upload-results--thumbnail__small-viewport"]]: isSmallViewport,
+                    })}
+                    src={toSquareThumbnailUrl(r.cloudinaryUrl, thumbnailSize)}
                     alt={`Uploaded observation ${i + 1}`}
                     loading="lazy"
-                    width={150}
-                    height={150}
+                    width={thumbnailSize}
+                    height={thumbnailSize}
                   />
                   full resolution
                 </a>

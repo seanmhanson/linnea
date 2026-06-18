@@ -16,6 +16,8 @@ import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
 
 const mockFetch = vi.fn();
+const longErrorMessage =
+  "A significantly longer error message has occurred here without truncation or other UI handling, which may cause layout issues if not properly managed by the component's styles or structure.";
 
 function makeFile(name = "photo.jpg", type = "image/jpeg"): File {
   return new File(["bytes"], name, { type });
@@ -101,6 +103,31 @@ describe("components/admin/UploadZone", () => {
 
       await waitFor(() => expect(screen.getByText("done")).toBeTruthy());
     });
+
+    it("renders file detail labels and selected file path", async () => {
+      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
+      render(<UploadZone onUploadComplete={vi.fn()} />);
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [makeFile("my-photo.jpg")] } });
+
+      await waitFor(() => expect(screen.getByText("my-photo.jpg")).toBeTruthy());
+      expect(screen.getByText("File path")).toBeTruthy();
+      expect(screen.getByText("Upload status")).toBeTruthy();
+    });
+
+    it("does not append extractedDate when no EXIF date is returned", async () => {
+      mockExtractImageDate.mockResolvedValueOnce(null);
+      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
+      render(<UploadZone onUploadComplete={vi.fn()} />);
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [makeFile()] } });
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+      const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect((init.body as FormData).get("extractedDate")).toBeNull();
+    });
   });
 
   describe("when a file is dropped on the drop zone", () => {
@@ -132,9 +159,23 @@ describe("components/admin/UploadZone", () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, { target: { files: [makeFile("bad.jpg")] } });
 
-      await waitFor(() => expect(screen.getByText("error: Upload failed")).toBeTruthy());
+      await waitFor(() => expect(screen.getByText(/Upload failed:\s*Upload failed/i)).toBeTruthy());
       expect(mockExtractImageDate).toHaveBeenCalledWith(expect.any(File));
       expect(mockStripImageMetadata).toHaveBeenCalledWith(expect.any(File));
+    });
+
+    it("shows long error messages returned by the API", async () => {
+      mockExtractImageDate.mockResolvedValueOnce(null);
+      mockFetch.mockReturnValueOnce(makeErrorResponse(500, { error: longErrorMessage }));
+      render(<UploadZone onUploadComplete={vi.fn()} />);
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [makeFile("bad-long.jpg")] } });
+
+      await waitFor(() => {
+        const status = screen.getByText(/Upload failed:/i);
+        expect(status.textContent ?? "").toContain(longErrorMessage);
+      });
     });
 
     it("does not call onUploadComplete when all files fail", async () => {
@@ -146,9 +187,22 @@ describe("components/admin/UploadZone", () => {
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
       fireEvent.change(input, { target: { files: [makeFile()] } });
 
-      await waitFor(() => screen.getByText(/error/i));
+      await waitFor(() => screen.getByText(/Upload Failed/i));
       expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
       expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
+      expect(onUploadComplete).not.toHaveBeenCalled();
+    });
+
+    it("shows caught runtime errors and does not call onUploadComplete", async () => {
+      mockExtractImageDate.mockResolvedValueOnce(null);
+      mockFetch.mockRejectedValueOnce(new Error("Network down"));
+      const onUploadComplete = vi.fn();
+      render(<UploadZone onUploadComplete={onUploadComplete} />);
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [makeFile("network.jpg")] } });
+
+      await waitFor(() => expect(screen.getByText(/Upload failed:\s*Network down/i)).toBeTruthy());
       expect(onUploadComplete).not.toHaveBeenCalled();
     });
   });
@@ -166,6 +220,37 @@ describe("components/admin/UploadZone", () => {
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(8));
       expect(mockExtractImageDate).toHaveBeenCalledTimes(8);
       expect(mockStripImageMetadata).toHaveBeenCalledTimes(8);
+    });
+  });
+
+  describe("when using keyboard interaction", () => {
+    it("opens file picker on Enter key", () => {
+      render(<UploadZone onUploadComplete={vi.fn()} />);
+
+      const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click");
+      const dropZone = screen.getByRole("button", { name: /upload images/i });
+      fireEvent.keyDown(dropZone, { key: "Enter" });
+
+      expect(clickSpy).toHaveBeenCalledTimes(1);
+      clickSpy.mockRestore();
+    });
+  });
+
+  describe("when maxFiles is provided", () => {
+    it("shows custom maxFiles in helper text and caps uploads accordingly", async () => {
+      mockExtractImageDate.mockResolvedValue(null);
+      mockFetch.mockImplementation(() => makeOkResponse(sampleResult));
+      render(<UploadZone onUploadComplete={vi.fn()} maxFiles={3} />);
+
+      expect(screen.getByText("Up to 3 images")).toBeTruthy();
+
+      const files = Array.from({ length: 5 }, (_, i) => makeFile(`custom${i}.jpg`));
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files } });
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(3);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(3);
     });
   });
 });

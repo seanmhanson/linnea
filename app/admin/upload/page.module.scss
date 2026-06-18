@@ -43,6 +43,11 @@
   justify-content: center;
 }
 
+.upload-results-list--single-column {
+  flex-direction: column;
+  align-items: center;
+}
+
 .upload-results--list-item {
   margin-bottom: 8px;
 }
@@ -68,4 +73,9 @@
   border-radius: 8px;
   margin-bottom: 8px;
   border: 1px solid $color-secondary;
+}
+
+.upload-results--thumbnail__small-viewport {
+  width: 220px;
+  height: 220px;
 }
