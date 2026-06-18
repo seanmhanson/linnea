@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { screen, fireEvent, waitFor } from "@testing-library/dom";
 import { cleanup, render } from "@testing-library/react";
 
+// mocks
 vi.mock("@/src/util/extractImageDate", () => ({
   extractImageDate: vi.fn(async () => null),
 }));
@@ -10,69 +11,135 @@ vi.mock("@/src/util/stripImageMetadata", () => ({
   stripImageMetadata: vi.fn(async (file: File) => file),
 }));
 
-// subject
-import UploadZone from "@/components/admin/UploadZone";
 import { extractImageDate } from "@/src/util/extractImageDate";
 import { stripImageMetadata } from "@/src/util/stripImageMetadata";
+import * as fetchUtils from "@/src/testUtils/fetchResponses";
+import { deferred } from "@/src/testUtils/deferred";
+import type { PromiseOrValue } from "@/src/testUtils/fetchResponses";
+import type { UploadZoneProps } from "@/components/admin/UploadZone";
 
-const mockFetch = vi.fn();
-const longErrorMessage =
-  "A significantly longer error message has occurred here without truncation or other UI handling, which may cause layout issues if not properly managed by the component's styles or structure.";
+// subject
+import UploadZone from "@/components/admin/UploadZone";
 
+// fixture data & fixture helpers
 function makeFile(name = "photo.jpg", type = "image/jpeg"): File {
   return new File(["bytes"], name, { type });
 }
 
-function makeOkResponse(data: object) {
-  return Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve(data),
-  } as Response);
-}
+const longErrorMessage =
+  "A significantly longer error message has occurred here without truncation or other UI handling," +
+  " which may cause layout issues if not properly managed by the component's styles or structure.";
 
-function makeErrorResponse(status: number, body: object) {
-  return Promise.resolve({
-    ok: false,
-    status,
-    json: () => Promise.resolve(body),
-  } as Response);
-}
-
-const sampleResult = {
+const fixtureResult = {
   cloudinaryUrl: "https://res.cloudinary.com/test/image.jpg",
   extractedDate: null,
 };
-
-const mockExtractImageDate = vi.mocked(extractImageDate);
-const mockStripImageMetadata = vi.mocked(stripImageMetadata);
+const fixtureSuccessResponse = fetchUtils.get200Response(fixtureResult);
+const fixtureErrorResponse = fetchUtils.get400Response("Upload failed");
+const fixtureLongErrorResponse = fetchUtils.get400Response(longErrorMessage);
+const fixtureFile = makeFile();
 
 describe("components/admin/UploadZone", () => {
+  const mockFetch = vi.fn();
+  const mockExtractImageDate = vi.mocked(extractImageDate);
+  const mockStripImageMetadata = vi.mocked(stripImageMetadata);
+  const onClickSpy = vi.spyOn(HTMLInputElement.prototype, "click");
+  const onUploadCompleteSpy = vi.fn();
+
   beforeEach(() => {
     vi.stubGlobal("fetch", mockFetch);
-    mockFetch.mockReset();
-    mockExtractImageDate.mockReset();
-    mockStripImageMetadata.mockClear();
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.resetAllMocks();
     cleanup();
   });
 
-  describe("when a file is selected via file input", () => {
-    it("posts the file to /api/upload", async () => {
-      mockExtractImageDate.mockResolvedValueOnce("2024-05-01T10:00:00.000Z");
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      const onUploadComplete = vi.fn();
-      render(<UploadZone onUploadComplete={onUploadComplete} />);
+  function setupFetchMock({
+    response = fixtureSuccessResponse,
+    error,
+  }: { response?: Promise<Response>; error?: Error } = {}) {
+    if (error) {
+      mockFetch.mockRejectedValue(error);
+    } else {
+      mockFetch.mockReturnValue(response);
+    }
+  }
 
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      const file = makeFile();
-      fireEvent.change(input, { target: { files: [file] } });
+  function setupExtractDateMock(extractedDate: PromiseOrValue<string | null>) {
+    if (extractedDate instanceof Promise) {
+      mockExtractImageDate.mockReturnValue(extractedDate);
+    } else {
+      mockExtractImageDate.mockResolvedValue(extractedDate);
+    }
+  }
+
+  function setupStripMetadataMock(strippedFile: PromiseOrValue<File>) {
+    if (strippedFile instanceof Promise) {
+      mockStripImageMetadata.mockReturnValue(strippedFile);
+    } else {
+      mockStripImageMetadata.mockResolvedValue(strippedFile);
+    }
+  }
+
+  function useDefaultMocks() {
+    setupFetchMock();
+    setupExtractDateMock(null);
+    setupStripMetadataMock(fixtureFile);
+  }
+
+  function renderSubject(overrides: Partial<UploadZoneProps> = {}) {
+    return render(<UploadZone onUploadComplete={onUploadCompleteSpy} {...overrides} />);
+  }
+
+  function triggerFileInputChange(files: File[] = [fixtureFile]) {
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files } });
+  }
+
+  describe("when a file is selected via file input", () => {
+    it("extracts and strips metadata prior to upload", async () => {
+      const extractDeferred = deferred<string>();
+      const stripDeferred = deferred<File>();
+
+      setupFetchMock();
+      setupExtractDateMock(extractDeferred.promise);
+      setupStripMetadataMock(stripDeferred.promise);
+
+      renderSubject();
+      triggerFileInputChange();
+
+      await waitFor(() => expect(mockExtractImageDate).toHaveBeenCalledTimes(1));
+      expect(mockStripImageMetadata).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      extractDeferred.resolve("2024-05-01T10:00:00.000Z");
+
+      await waitFor(() => expect(mockStripImageMetadata).toHaveBeenCalledTimes(1));
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      stripDeferred.resolve(fixtureFile);
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
-      expect(mockExtractImageDate).toHaveBeenCalledWith(file);
-      expect(mockStripImageMetadata).toHaveBeenCalledWith(file);
+    });
+
+    it("posts the file to /api/upload", async () => {
+      const extractedDate = "2024-05-01T10:00:00.000Z";
+
+      setupFetchMock();
+      setupExtractDateMock(extractedDate);
+      setupStripMetadataMock(fixtureFile);
+
+      renderSubject();
+      triggerFileInputChange();
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
+      expect(mockExtractImageDate).toHaveBeenCalledWith(fixtureFile);
+      expect(mockStripImageMetadata).toHaveBeenCalledWith(fixtureFile);
 
       const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
       expect(url).toBe("/api/upload");
@@ -82,47 +149,40 @@ describe("components/admin/UploadZone", () => {
     });
 
     it("calls onUploadComplete with the result", async () => {
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      const onUploadComplete = vi.fn();
-      render(<UploadZone onUploadComplete={onUploadComplete} />);
+      useDefaultMocks();
+      renderSubject();
+      triggerFileInputChange();
 
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile()] } });
-
-      await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith([sampleResult]));
+      await waitFor(() => expect(onUploadCompleteSpy).toHaveBeenCalledWith([fixtureResult]));
+      expect(onUploadCompleteSpy).toHaveBeenCalledTimes(1);
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
       expect(mockExtractImageDate).toHaveBeenCalledWith(expect.any(File));
       expect(mockStripImageMetadata).toHaveBeenCalledWith(expect.any(File));
     });
 
     it("shows done status after successful upload", async () => {
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile("cat.jpg")] } });
+      useDefaultMocks();
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => expect(screen.getByText("done")).toBeTruthy());
     });
 
     it("renders file detail labels and selected file path", async () => {
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
+      useDefaultMocks();
+      renderSubject();
+      triggerFileInputChange();
 
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile("my-photo.jpg")] } });
-
-      await waitFor(() => expect(screen.getByText("my-photo.jpg")).toBeTruthy());
+      await waitFor(() => expect(screen.getByText("photo.jpg")).toBeTruthy());
       expect(screen.getByText("File path")).toBeTruthy();
       expect(screen.getByText("Upload status")).toBeTruthy();
     });
 
     it("does not append extractedDate when no EXIF date is returned", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile()] } });
+      useDefaultMocks();
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
       const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -132,16 +192,16 @@ describe("components/admin/UploadZone", () => {
 
   describe("when a file is dropped on the drop zone", () => {
     it("posts the file to /api/upload", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockReturnValueOnce(makeOkResponse(sampleResult));
-      const onUploadComplete = vi.fn();
-      render(<UploadZone onUploadComplete={onUploadComplete} />);
+      useDefaultMocks();
+      renderSubject();
 
       const dropZone = screen.getByRole("button", { name: /upload images/i });
       const file = makeFile("dropped.jpg");
       fireEvent.drop(dropZone, { dataTransfer: { files: [file] } });
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
       expect(mockExtractImageDate).toHaveBeenCalledWith(file);
       expect(mockStripImageMetadata).toHaveBeenCalledWith(file);
 
@@ -152,25 +212,25 @@ describe("components/admin/UploadZone", () => {
 
   describe("when the upload returns an error response", () => {
     it("shows error status with message", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockReturnValueOnce(makeErrorResponse(500, { error: "Upload failed" }));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile("bad.jpg")] } });
+      setupFetchMock({ response: fixtureErrorResponse });
+      setupExtractDateMock("2024-05-01T10:00:00.000Z");
+      setupStripMetadataMock(fixtureFile);
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => expect(screen.getByText(/Upload failed:\s*Upload failed/i)).toBeTruthy());
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
       expect(mockExtractImageDate).toHaveBeenCalledWith(expect.any(File));
       expect(mockStripImageMetadata).toHaveBeenCalledWith(expect.any(File));
     });
 
     it("shows long error messages returned by the API", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockReturnValueOnce(makeErrorResponse(500, { error: longErrorMessage }));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile("bad-long.jpg")] } });
+      setupFetchMock({ response: fixtureLongErrorResponse });
+      setupExtractDateMock("2024-05-01T10:00:00.000Z");
+      setupStripMetadataMock(fixtureFile);
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => {
         const status = screen.getByText(/Upload failed:/i);
@@ -179,43 +239,37 @@ describe("components/admin/UploadZone", () => {
     });
 
     it("does not call onUploadComplete when all files fail", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockReturnValueOnce(makeErrorResponse(500, { error: "Upload failed" }));
-      const onUploadComplete = vi.fn();
-      render(<UploadZone onUploadComplete={onUploadComplete} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile()] } });
+      setupFetchMock({ response: fixtureErrorResponse });
+      setupExtractDateMock("2024-05-01T10:00:00.000Z");
+      setupStripMetadataMock(fixtureFile);
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => screen.getByText(/Upload Failed/i));
       expect(mockExtractImageDate).toHaveBeenCalledTimes(1);
       expect(mockStripImageMetadata).toHaveBeenCalledTimes(1);
-      expect(onUploadComplete).not.toHaveBeenCalled();
+      expect(onUploadCompleteSpy).not.toHaveBeenCalled();
     });
 
     it("shows caught runtime errors and does not call onUploadComplete", async () => {
-      mockExtractImageDate.mockResolvedValueOnce(null);
-      mockFetch.mockRejectedValueOnce(new Error("Network down"));
-      const onUploadComplete = vi.fn();
-      render(<UploadZone onUploadComplete={onUploadComplete} />);
-
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [makeFile("network.jpg")] } });
+      setupFetchMock({ error: new Error("Network down") });
+      setupExtractDateMock("2024-05-01T10:00:00.000Z");
+      setupStripMetadataMock(fixtureFile);
+      renderSubject();
+      triggerFileInputChange();
 
       await waitFor(() => expect(screen.getByText(/Upload failed:\s*Network down/i)).toBeTruthy());
-      expect(onUploadComplete).not.toHaveBeenCalled();
+      expect(onUploadCompleteSpy).not.toHaveBeenCalled();
     });
   });
 
   describe("when more than 8 files are selected", () => {
     it("only uploads the first 8 files", async () => {
-      mockExtractImageDate.mockResolvedValue(null);
-      mockFetch.mockImplementation(() => makeOkResponse(sampleResult));
-      render(<UploadZone onUploadComplete={vi.fn()} />);
+      useDefaultMocks();
+      renderSubject();
 
       const files = Array.from({ length: 10 }, (_, i) => makeFile(`file${i}.jpg`));
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files } });
+      triggerFileInputChange(files);
 
       await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(8));
       expect(mockExtractImageDate).toHaveBeenCalledTimes(8);
@@ -225,32 +279,36 @@ describe("components/admin/UploadZone", () => {
 
   describe("when using keyboard interaction", () => {
     it("opens file picker on Enter key", () => {
-      render(<UploadZone onUploadComplete={vi.fn()} />);
+      useDefaultMocks();
+      renderSubject();
 
-      const clickSpy = vi.spyOn(HTMLInputElement.prototype, "click");
       const dropZone = screen.getByRole("button", { name: /upload images/i });
       fireEvent.keyDown(dropZone, { key: "Enter" });
 
-      expect(clickSpy).toHaveBeenCalledTimes(1);
-      clickSpy.mockRestore();
+      expect(onClickSpy).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("when maxFiles is provided", () => {
+    const maxFiles = 3;
+
     it("shows custom maxFiles in helper text and caps uploads accordingly", async () => {
-      mockExtractImageDate.mockResolvedValue(null);
-      mockFetch.mockImplementation(() => makeOkResponse(sampleResult));
-      render(<UploadZone onUploadComplete={vi.fn()} maxFiles={3} />);
+      useDefaultMocks();
+      renderSubject({ maxFiles });
 
-      expect(screen.getByText("Up to 3 images")).toBeTruthy();
+      expect(screen.getByText(`Up to ${maxFiles} images`)).toBeTruthy();
+    });
 
-      const files = Array.from({ length: 5 }, (_, i) => makeFile(`custom${i}.jpg`));
-      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files } });
+    it("calls to fetch with the capped number of files when maxFiles is set", async () => {
+      const files = Array.from({ length: 5 }, (_, i) => makeFile(`test${i}.jpg`));
 
-      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(3));
-      expect(mockExtractImageDate).toHaveBeenCalledTimes(3);
-      expect(mockStripImageMetadata).toHaveBeenCalledTimes(3);
+      useDefaultMocks();
+      renderSubject({ maxFiles });
+      triggerFileInputChange(files);
+
+      await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(maxFiles));
+      expect(mockExtractImageDate).toHaveBeenCalledTimes(maxFiles);
+      expect(mockStripImageMetadata).toHaveBeenCalledTimes(maxFiles);
     });
   });
 });

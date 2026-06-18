@@ -16,7 +16,7 @@ type FileEntry = {
   error?: string;
 };
 
-type UploadZoneProps = {
+export type UploadZoneProps = {
   onUploadComplete: (results: UploadResult[]) => void;
   maxFiles?: number;
 };
